@@ -14,12 +14,9 @@ if (!defined('ABSPATH')) {
 
 class AesysInfoCityViewer {
     private static $instance = null;
-    private $version;
     private const OPTION_NAME = 'viewer-for-aesys-infocity';
-    private const VERSION_OPTION = 'aesys_version_number';
-    
+
     private function __construct() {
-        $this->version = $this->get_plugin_version();
         $this->init_hooks();
     }
 
@@ -32,28 +29,37 @@ class AesysInfoCityViewer {
 
     private function init_hooks() {
         add_action('init', [$this, 'load_admin']);
+        add_action('init', [$this, 'register_assets']);
         add_action('admin_init', [$this, 'admin_init']);
         add_shortcode('aesys', [$this, 'handle_shortcode']);
     }
 
-    private function get_plugin_version() {
-        if (!function_exists('get_plugin_data')) {
-            require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+    public function load_admin() {
+        if (is_admin()) {
+            require_once plugin_dir_path(__FILE__) . 'class-admin.php';
         }
-        $plugin_data = get_plugin_data(__FILE__);
-        return $plugin_data['Version'];
     }
 
-    public function load_admin() {
-        require_once plugin_dir_path(__FILE__) . 'class-admin.php';
+    public function register_assets() {
+        // Swap the loader with the real display image once the page is ready
+        wp_register_script('aesys-viewer', false, [], false, true);
+        wp_add_inline_script('aesys-viewer', '(function() {
+    function loadAesysImgs() {
+        document.querySelectorAll("img.aesys-img[data-src]").forEach(function(img) {
+            img.src = img.dataset.src;
+            img.removeAttribute("data-src");
+        });
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", loadAesysImgs);
+    } else {
+        loadAesysImgs();
+    }
+})();');
     }
 
     public function admin_init() {
         register_setting(self::OPTION_NAME, 'aesys_panels');
-        
-        if (version_compare($this->version, get_option(self::VERSION_OPTION)) === 1) {
-            update_option(self::VERSION_OPTION, $this->version);
-        }
     }
 
     public function handle_shortcode($atts) {
@@ -62,34 +68,49 @@ class AesysInfoCityViewer {
         return ob_get_clean();
     }
 
-    public function get_display_url($id, $refresh = false) {
-        $remote_url = 'https://www.myinfo.city/VMS/getCurrentPreviewGIF?VMSID=' . $id;
-        $local_url = plugin_dir_path(__FILE__) . 'scrape/' . $id . '.gif';
+    public function get_display_url($id) {
+        // Display IDs are always numeric
+        if (!preg_match('/^\d{1,10}$/', (string) $id)) {
+            return false;
+        }
+
+        $file = $id . '.gif';
+        $remote_url = add_query_arg('VMSID', $id, 'https://www.myinfo.city/VMS/getCurrentPreviewGIF');
+        $local_path = plugin_dir_path(__FILE__) . 'scrape/' . $file;
         $cache_time = 15 * MINUTE_IN_SECONDS;
-        
-        $old_timestamp = get_option('aesys_time_' . $id);
-        
-        // Check if cached version is still valid
-        if ($old_timestamp && 
-            ($old_timestamp > (current_time('timestamp') - $cache_time)) && 
-            file_exists($local_url)) {
-            return plugins_url('scrape/' . $id . '.gif', __FILE__);
+        $retry_time = 5 * MINUTE_IN_SECONDS;
+
+        $old_timestamp = (int) get_option('aesys_time_' . $id);
+        $is_fresh = $old_timestamp > (current_time('timestamp') - $cache_time) && file_exists($local_path);
+
+        // Refresh the cache, waiting a few minutes after a failed attempt
+        if (!$is_fresh && !get_transient('aesys_retry_' . $id)) {
+            if ($this->save_remote_file($remote_url, $local_path)) {
+                update_option('aesys_time_' . $id, current_time('timestamp'), false);
+            } else {
+                set_transient('aesys_retry_' . $id, 1, $retry_time);
+            }
         }
-        
-        // Try to fetch and save new version
-        if ($this->save_remote_file($remote_url, $local_url)) {
-            update_option('aesys_time_' . $id, current_time('timestamp'));
-            return plugins_url('scrape/' . $id . '.gif', __FILE__);
-        }
-        
+
         // Fallback to existing local file or remote URL
-        return file_exists($local_url) 
-            ? plugins_url('scrape/' . $id . '.gif', __FILE__)
+        return file_exists($local_path)
+            ? plugins_url('scrape/' . $file, __FILE__)
             : $remote_url;
     }
 
     private function save_remote_file($remote_url, $local_path) {
-        return @copy($remote_url, $local_path);
+        $response = wp_remote_get($remote_url, ['timeout' => 5]);
+        if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
+            return false;
+        }
+
+        // Store only valid GIF images
+        $body = wp_remote_retrieve_body($response);
+        if (strncmp($body, 'GIF8', 4) !== 0) {
+            return false;
+        }
+
+        return false !== file_put_contents($local_path, $body, LOCK_EX);
     }
 }
 
@@ -99,21 +120,9 @@ function aesys_init() {
 }
 add_action('plugins_loaded', 'aesys_init');
 
-// Backwards compatibility for existing code
+// Backwards compatibility for existing code ($refresh is ignored)
 function aesys_get_url($id, $refresh = false) {
-    return aesys_init()->get_display_url($id, $refresh);
-}
-
-// Validate a CSS length (e.g. "100%", "400px", "20em"); unitless numbers become px
-function aesys_sanitize_css_length($value, $default = '') {
-    $value = trim((string) $value);
-    if (preg_match('/^\d+(\.\d+)?$/', $value)) {
-        return $value . 'px';
-    }
-    if (preg_match('/^\d+(\.\d+)?(px|%|em|rem|vw|vh)$/', $value)) {
-        return $value;
-    }
-    return $default;
+    return aesys_init()->get_display_url($id);
 }
 
 // Load Gutenberg block

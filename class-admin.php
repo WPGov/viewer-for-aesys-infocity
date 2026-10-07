@@ -42,7 +42,7 @@ class Aesys_Admin {
                 <div id="post-body" class="metabox-holder columns-2">
                     <div id="post-body-content">
                         <?php $this->render_instructions_box(); ?>
-                        <?php $this->render_settings_box(); ?>
+                        <?php if ( current_user_can( 'manage_options' ) ) { $this->render_settings_box(); } ?>
                     </div>
                     <div id="postbox-container-1" class="postbox-container">
                         <?php $this->render_credits_box(); ?>
