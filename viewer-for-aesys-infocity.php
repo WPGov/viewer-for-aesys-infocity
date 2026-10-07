@@ -104,5 +104,17 @@ function aesys_get_url($id, $refresh = false) {
     return aesys_init()->get_display_url($id, $refresh);
 }
 
+// Validate a CSS length (e.g. "100%", "400px", "20em"); unitless numbers become px
+function aesys_sanitize_css_length($value, $default = '') {
+    $value = trim((string) $value);
+    if (preg_match('/^\d+(\.\d+)?$/', $value)) {
+        return $value . 'px';
+    }
+    if (preg_match('/^\d+(\.\d+)?(px|%|em|rem|vw|vh)$/', $value)) {
+        return $value;
+    }
+    return $default;
+}
+
 // Load Gutenberg block
 require_once plugin_dir_path(__FILE__) . 'blocks/aesys-block.php';

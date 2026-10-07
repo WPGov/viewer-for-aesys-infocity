@@ -14,11 +14,9 @@ if (!$id) { echo 'NO ID FOUND'; return; }
 
 $url = aesys_get_url($id);
 
-if ($height) {
-    $height_attr = 'height="' . esc_attr($height) . '"';
-} else {
-    $height_attr = '';
-}
+$width = aesys_sanitize_css_length($width, '100%');
+$height = aesys_sanitize_css_length($height);
+$height_style = $height ? ' height: ' . $height . ';' : '';
 
 $loader = plugins_url('img/loader.gif', __FILE__);
 
@@ -36,11 +34,10 @@ echo '
         color: white;
     ">' . esc_html($title) . '</div>
     <img
-        class="aesys-img-' . esc_attr($id) . '"
-        style="background: #0E0E0E; border-radius: 0px 0px 10px 10px; display: block; width: 100%;"
+        class="aesys-img aesys-img-' . esc_attr(sanitize_html_class($id)) . '"
+        style="background: #0E0E0E; border-radius: 0px 0px 10px 10px; display: block; width: 100%;' . esc_attr($height_style) . '"
         src="' . esc_url($loader) . '"
         data-src="' . esc_url($url) . '"
-        ' . $height_attr . '
         loading="lazy"
         alt="' . esc_attr($title) . ' preview"
     />
@@ -49,7 +46,7 @@ echo '
 <!--eucookielaw_exclude-->
 (function() {
     function loadAesysImgs() {
-        var imgs = document.querySelectorAll(".aesys-img-' . $id . '");
+        var imgs = document.querySelectorAll("img.aesys-img[data-src]");
         imgs.forEach(function(img) {
             if (img && img.dataset.src) {
                 img.src = img.dataset.src;
