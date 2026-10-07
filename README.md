@@ -18,7 +18,7 @@ Visualizza i display AESYS in post, pagine e widget: un nuovo strumento di infor
 - Pagina di amministrazione con l'anteprima di tutti i display configurati
 - Pensato per Comuni ed enti pubblici, nell'ambito del progetto [WPGov.it](https://www.wpgov.it)
 
-Plugin non ufficiale, rilasciato previo accordo con AESYS S.p.A. Il marchio "MyInfoCity" e la tecnologia cloud dei display "Informacittà" sono di proprietà di AESYS S.p.A.
+Plugin non ufficiale rilasciato previo accordo con AESYS S.p.A. Il marchio "MyInfoCity" e la tecnologia cloud dei display "Informacittà" sono di proprietà di AESYS S.p.A.
 
 ## Installazione
 

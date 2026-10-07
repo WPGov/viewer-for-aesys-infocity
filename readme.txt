@@ -1,11 +1,12 @@
 === Aesys MyInfo.City Viewer ===
 Contributors: Milmor
-Version:	2.2
-Stable tag:	2.2
+Version:	2.3
+Stable tag:	2.3
 Author:		Marco Milesi
 Author URI:   https://profiles.wordpress.org/milmor/
-Requires at least: 3.8
-Tested up to: 6.2
+Requires at least: 5.0
+Tested up to: 7.2
+Requires PHP: 7.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,15 +20,15 @@ Questo plugin è compatibile solo con i display che trovi nel portale [MyInfo.Ci
 
 https://youtu.be/wBKTMcg4Ujs
 
-= Shortcode =
+= Blocco e shortcode =
 
-Per visualizzare i display nei tuoi post, pagine o widget, utilizza lo shortcode:
+I display possono essere inseriti con il blocco "InfoCity Viewer" (categoria Incorporamenti) oppure, in post, pagine e widget, con lo shortcode:
 
 `[aesys id="XXX" title="XXX" height="XXX" width="XXX"]`
 
 Parametri disponibili:
 
-* **id** - default: 0 - Consulta la videoguida per trovare il tuo ID
+* **id** - numerico, obbligatorio - Consulta la videoguida per trovare il tuo ID
 * **height** - default: auto
 * **width** - default: 100%
 * **title** - default: nessuno
@@ -41,6 +42,14 @@ Il plugin integra un sistema di cache che rigenera i display ogni 15 minuti
 
 **Plugin non ufficiale rilasciato previo accordo con AESYS S.p.A.**
 Il marchio "MyInfoCity" e la tecnologia cloud dei display "Informacittà" sono di proprietà di AESYS S.p.A.
+
+== Servizi esterni ==
+
+Questo plugin si collega al servizio MyInfo.City di AESYS S.p.A. per ottenere l'immagine aggiornata dei display configurati.
+
+* **Dati inviati:** l'ID del display (VMSID) richiesto.
+* **Quando:** alla visualizzazione di una pagina che contiene il blocco o lo shortcode, al massimo ogni 15 minuti per display. La richiesta parte dal server del sito; se l'immagine non è disponibile nella cache locale, viene caricata direttamente dal browser del visitatore, che in tal caso comunica il proprio indirizzo IP al servizio.
+* **Fornitore:** AESYS S.p.A. - [MyInfo.City](https://mic.aesys.com/) - [Privacy Policy](https://identityserver.aesys.com/Account/Privacy) - [Cookie Policy](https://www.aesys.com/it/cookie-policy/)
 
 == Installation ==
 
@@ -56,6 +65,13 @@ This section describes how to install the plugin and get it working.
 4. Public post example (shortcode)
 
 == Changelog ==
+
+= 2.3 2026-10-08 =
+* Nuovo: blocco per l'editor
+* Migliorato: pagina di amministrazione rinnovata
+* Migliorato: cache dei display più affidabile
+* Migliorato: accessibilità dell'anteprima dei display
+* Corretto: miglioramenti di sicurezza
 
 = 2.2 20230217 =
 * Minor changes
